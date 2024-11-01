@@ -1,74 +1,87 @@
 "use strict";
 
-const todoForm = document.getElementById("todo-form"),
-    todoInput = document.getElementById("todo-input"),
-    todoList = document.getElementById("todo-list");
+const todoForm = document.getElementById("todo-form");
+const todoInput = document.getElementById("todo-input");
+const todoList = document.getElementById("todo-list");
+
+const DELETE_BUTTON_LABEL = "Delete";
+const EDIT_BUTTON_LABEL = "Edit";
+const SAVE_BUTTON_LABEL = "Save";
+const EMPTY_TASK_NAME_ERROR = "Please, enter a task name!";
+const TASK_EDITING_CLASS = "editing";
+const TASK_COMPLETED_CLASS = "completed";
+const LOCAL_STORAGE_KEY = "tasks";
+
 
 todoForm.addEventListener("submit", function (event) {
     event.preventDefault();
-    let newTask = todoInput.value;
+    let newTaskName = todoInput.value;
 
-    if (newTask === "") {
-        alert("Please, enter a task!");
+    if (newTaskName === "") {
+        alert(EMPTY_TASK_NAME_ERROR);
         return;
     }
 
-    addTask(newTask);
+    addTask(newTaskName);
     todoInput.value = "";
 });
 
-function addTask(task) {
-    const listItem = document.createElement('li');
+function addTask(taskName, isCompleted = false) {
+    const listItem = document.createElement("li");
+    listItem.classList.toggle(TASK_COMPLETED_CLASS, isCompleted);
 
-    const taskText = document.createElement('span');
-    taskText.textContent = task;
-    listItem.appendChild(taskText);
+    const taskNameSpan = document.createElement("span");
+    taskNameSpan.textContent = taskName;
+    taskNameSpan.style.textDecoration = isCompleted ? "line-through" : "none";
+    listItem.appendChild(taskNameSpan);
 
-    const checkBox = document.createElement('input');
-    checkBox.setAttribute('type', 'checkbox');
-    listItem.appendChild(checkBox);
+    const isTaskDoneCheckbox = document.createElement("input");
+    isTaskDoneCheckbox.setAttribute("type", "checkbox");
+    isTaskDoneCheckbox.checked = isCompleted;
+    listItem.appendChild(isTaskDoneCheckbox);
 
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = DELETE_BUTTON_LABEL;
     listItem.appendChild(deleteButton);
 
-    const editButton = document.createElement('button');
-    editButton.textContent = 'Edit';
+    const editButton = document.createElement("button");
+    editButton.textContent = EDIT_BUTTON_LABEL;
     listItem.appendChild(editButton);
 
     todoList.appendChild(listItem);
 
-    checkBox.addEventListener('change', function () {
-        if (this.checked) {
-            taskText.style.textDecoration = 'line-through';
-        } else {
-            taskText.style.textDecoration = 'none';
-        }
+    isTaskDoneCheckbox.addEventListener("change", function () {
+        taskNameSpan.style.textDecoration = this.checked ? "line-through" : "none";
+
+        listItem.classList.toggle(TASK_COMPLETED_CLASS, this.checked);
+
+        saveTasksToLocalStorage();
     });
 
-    deleteButton.addEventListener('click', function () {
+    deleteButton.addEventListener("click", function () {
         todoList.removeChild(listItem);
+
+        saveTasksToLocalStorage();
     });
  
-    const input = document.createElement('input');
-    editButton.addEventListener('click', function () {
-        const isEditing = listItem.classList.contains('editing');
+    const taskNameEditInput = document.createElement("input");
+    taskNameEditInput.type = "text";
+    editButton.addEventListener("click", function () {
+        const isEditing = listItem.classList.contains(TASK_EDITING_CLASS);
 
         if (isEditing) {
-            taskText.textContent = this.previousSibling.value; // Assuming the input field is right before the edit button
-            listItem.insertBefore(taskText, input);
-            taskText.textContent = input.value;
-            listItem.removeChild(input);
-            listItem.classList.remove('editing');
-            editButton.textContent = 'Edit';
+            taskNameSpan.textContent = taskNameEditInput.value;
+            listItem.replaceChild(taskNameSpan, taskNameEditInput);
+            listItem.classList.remove(TASK_EDITING_CLASS);
+            editButton.textContent = EDIT_BUTTON_LABEL;
         } else {
-            input.type = 'text';
-            input.value = taskText.textContent;
-            listItem.insertBefore(input, taskText);
-            listItem.removeChild(taskText);
-            listItem.classList.add('editing');
-            editButton.textContent = 'Save';
+            taskNameEditInput.value = taskNameSpan.textContent;
+            listItem.replaceChild(taskNameEditInput, taskNameSpan);
+            listItem.classList.add(TASK_EDITING_CLASS);
+            editButton.textContent = SAVE_BUTTON_LABEL;
         }
+        
+        saveTasksToLocalStorage();
     });
 
     saveTasksToLocalStorage();
@@ -77,17 +90,17 @@ function addTask(task) {
 
 function saveTasksToLocalStorage() {
     const tasks = [];
-    document.querySelectorAll('#todo-list li').forEach(task => {
-        const taskText = task.querySelector('span').textContent;
-        const isCompleted = task.classList.contains('completed');
-        tasks.push({ text: taskText, completed: isCompleted });
+    document.querySelectorAll("#todo-list li").forEach(task => {
+        const taskName = task.querySelector("span").textContent;
+        const isCompleted = task.classList.contains(TASK_COMPLETED_CLASS);
+        tasks.push({ name: taskName, completed: isCompleted });
     });
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTasks = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) ?? [];
     savedTasks.forEach(task => {
-        addTask(task.text);
+        addTask(task.name, task.completed);
     });
 });
