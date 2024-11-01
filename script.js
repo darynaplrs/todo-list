@@ -1,8 +1,8 @@
 "use strict";
 
-const todoForm = document.getElementById("todo-form");
-const todoInput = document.getElementById("todo-input");
-const todoList = document.getElementById("todo-list");
+const TODO_FORM = document.getElementById("todo-form");
+const TODO_INPUT = document.getElementById("todo-input");
+const TODO_LIST = document.getElementById("todo-list");
 
 const DELETE_BUTTON_LABEL = "Delete";
 const EDIT_BUTTON_LABEL = "Edit";
@@ -13,9 +13,9 @@ const TASK_COMPLETED_CLASS = "completed";
 const LOCAL_STORAGE_KEY = "tasks";
 
 
-todoForm.addEventListener("submit", function (event) {
+TODO_FORM.addEventListener("submit", function (event) {
     event.preventDefault();
-    let newTaskName = todoInput.value;
+    let newTaskName = TODO_INPUT.value;
 
     if (newTaskName === "") {
         alert(EMPTY_TASK_NAME_ERROR);
@@ -23,7 +23,7 @@ todoForm.addEventListener("submit", function (event) {
     }
 
     addTask(newTaskName);
-    todoInput.value = "";
+    TODO_INPUT.value = "";
 });
 
 function addTask(taskName, isCompleted = false) {
@@ -48,7 +48,7 @@ function addTask(taskName, isCompleted = false) {
     editButton.textContent = EDIT_BUTTON_LABEL;
     listItem.appendChild(editButton);
 
-    todoList.appendChild(listItem);
+    TODO_LIST.appendChild(listItem);
 
     isTaskDoneCheckbox.addEventListener("change", function () {
         taskNameSpan.style.textDecoration = this.checked ? "line-through" : "none";
@@ -59,7 +59,7 @@ function addTask(taskName, isCompleted = false) {
     });
 
     deleteButton.addEventListener("click", function () {
-        todoList.removeChild(listItem);
+        TODO_LIST.removeChild(listItem);
 
         saveTasksToLocalStorage();
     });
