@@ -1,30 +1,31 @@
 "use strict";
 
-const TODO_FORM = document.getElementById("todo-form");
-const TODO_INPUT = document.getElementById("todo-input");
-const TODO_LIST = document.getElementById("todo-list");
+const TODO_FORM = document.getElementById("todo_form");
+const TODO_INPUT = document.getElementById("todo_input");
+const TODO_LIST = document.getElementById("todo_list");
+
 
 const DELETE_BUTTON_LABEL = "Delete";
 const EDIT_BUTTON_LABEL = "Edit";
 const SAVE_BUTTON_LABEL = "Save";
-const EMPTY_TASK_NAME_ERROR = "Please, enter a task name!";
-const TASK_EDITING_CLASS = "editing";
+const ERROR_MESSAGE = "Please, enter the task name!"
+
 const TASK_COMPLETED_CLASS = "completed";
+const TASK_EDITING_CLASS = "editing";
+
 const LOCAL_STORAGE_KEY = "tasks";
 
-
-TODO_FORM.addEventListener("submit", function (event) {
+TODO_FORM.addEventListener("submit", event => {
     event.preventDefault();
-    let newTaskName = TODO_INPUT.value;
-
-    if (newTaskName === "") {
-        alert(EMPTY_TASK_NAME_ERROR);
-        return;
+    const taskName = TODO_INPUT.value;
+    if (taskName === "") {
+        alert(ERROR_MESSAGE);
+    } else {
+        addTask(taskName);
     }
+})
 
-    addTask(newTaskName);
-    TODO_INPUT.value = "";
-});
+
 
 function addTask(taskName, isCompleted = false) {
     const listItem = document.createElement("li");
@@ -32,75 +33,78 @@ function addTask(taskName, isCompleted = false) {
 
     const taskNameSpan = document.createElement("span");
     taskNameSpan.textContent = taskName;
-    taskNameSpan.style.textDecoration = isCompleted ? "line-through" : "none";
     listItem.appendChild(taskNameSpan);
+    taskNameSpan.style.textDecoration = isCompleted ? "line-through" : "none";
 
-    const isTaskDoneCheckbox = document.createElement("input");
-    isTaskDoneCheckbox.setAttribute("type", "checkbox");
-    isTaskDoneCheckbox.checked = isCompleted;
-    listItem.appendChild(isTaskDoneCheckbox);
+    const taskCheckbox = document.createElement("input");
+    taskCheckbox.setAttribute("type", "checkbox");
+    taskCheckbox.checked = isCompleted;
+    listItem.appendChild(taskCheckbox);
 
     const deleteButton = document.createElement("button");
     deleteButton.textContent = DELETE_BUTTON_LABEL;
     listItem.appendChild(deleteButton);
 
-    const editButton = document.createElement("button");
-    editButton.textContent = EDIT_BUTTON_LABEL;
-    listItem.appendChild(editButton);
+    const editButtton = document.createElement("button");
+
+    editButtton.textContent = EDIT_BUTTON_LABEL;
+    listItem.appendChild(editButtton);
 
     TODO_LIST.appendChild(listItem);
+    TODO_INPUT.value = "";
 
-    isTaskDoneCheckbox.addEventListener("change", function () {
-        taskNameSpan.style.textDecoration = this.checked ? "line-through" : "none";
-
-        listItem.classList.toggle(TASK_COMPLETED_CLASS, this.checked);
-
-        saveTasksToLocalStorage();
-    });
+    taskCheckbox.addEventListener("change", event => {
+        const target = event.target;
+        taskNameSpan.style.textDecoration = target.checked ? "line-through" : "none";
+        listItem.classList.toggle(TASK_COMPLETED_CLASS, target.checked);
+        saveToLocalStorage();
+    })
 
     deleteButton.addEventListener("click", function () {
         TODO_LIST.removeChild(listItem);
 
-        saveTasksToLocalStorage();
-    });
- 
-    const taskNameEditInput = document.createElement("input");
-    taskNameEditInput.type = "text";
-    editButton.addEventListener("click", function () {
+        saveToLocalStorage();
+    })
+
+    const taskEditingInput = document.createElement("input");
+
+    editButtton.addEventListener("click", function() {
         const isEditing = listItem.classList.contains(TASK_EDITING_CLASS);
 
         if (isEditing) {
-            taskNameSpan.textContent = taskNameEditInput.value;
-            listItem.replaceChild(taskNameSpan, taskNameEditInput);
+            taskNameSpan.textContent = taskEditingInput.value;
+            listItem.replaceChild(taskNameSpan, taskEditingInput);
+            taskNameSpan.textContent = taskEditingInput.value;
             listItem.classList.remove(TASK_EDITING_CLASS);
-            editButton.textContent = EDIT_BUTTON_LABEL;
+            editButtton.textContent = EDIT_BUTTON_LABEL;
         } else {
-            taskNameEditInput.value = taskNameSpan.textContent;
-            listItem.replaceChild(taskNameEditInput, taskNameSpan);
+            taskEditingInput.type = "text";
+            taskEditingInput.value = taskNameSpan.textContent;
+            listItem.replaceChild(taskEditingInput, taskNameSpan);
             listItem.classList.add(TASK_EDITING_CLASS);
-            editButton.textContent = SAVE_BUTTON_LABEL;
+            editButtton.textContent = SAVE_BUTTON_LABEL;
         }
-        
-        saveTasksToLocalStorage();
-    });
 
-    saveTasksToLocalStorage();
+        saveToLocalStorage();
+    })
 
+    saveToLocalStorage();
 }
 
-function saveTasksToLocalStorage() {
+function saveToLocalStorage() {
     const tasks = [];
-    document.querySelectorAll("#todo-list li").forEach(task => {
-        const taskName = task.querySelector("span").textContent;
+    document.querySelectorAll("li").forEach((task) => {
+        const taskName = task.firstChild.textContent;
         const isCompleted = task.classList.contains(TASK_COMPLETED_CLASS);
-        tasks.push({ name: taskName, completed: isCompleted });
+        tasks.push({ task: taskName, status: isCompleted });
     });
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const savedTasks = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) ?? [];
+document.addEventListener("DOMContentLoaded", function() {
+    const savedTasks = JSON.parse(localStorage[LOCAL_STORAGE_KEY]) ?? [];
+
     savedTasks.forEach(task => {
-        addTask(task.name, task.completed);
-    });
-});
+        addTask(task.task, task.status);
+    })
+})
