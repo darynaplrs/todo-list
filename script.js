@@ -1,25 +1,25 @@
 "use strict";
 
-const todoForm = document.getElementById("todo_form");
-const todoInput = document.getElementById("todo_input");
-const todoList = document.getElementById("todo_list");
+const TODO_FORM = document.getElementById("todo_form");
+const TODO_INPUT = document.getElementById("todo_input");
+const TODO_LIST = document.getElementById("todo_list");
 
 
-const DELETE_BUTTON = "Delete";
-const EDIT_BUTTON = "Edit";
-const SAVE_BUTTON = "Save";
-const ERROR = "Please, enter the task name!"
+const DELETE_BUTTON_LABEL = "Delete";
+const EDIT_BUTTON_LABEL = "Edit";
+const SAVE_BUTTON_LABEL = "Save";
+const ERROR_MESSAGE = "Please, enter the task name!"
 
 const TASK_COMPLETED_CLASS = "completed";
 const TASK_EDITING_CLASS = "editing";
 
 const LOCAL_STORAGE_KEY = "tasks";
 
-todoForm.addEventListener("submit", event => {
+TODO_FORM.addEventListener("submit", event => {
     event.preventDefault();
-    const taskName = todoInput.value;
+    const taskName = TODO_INPUT.value;
     if (taskName === "") {
-        alert(ERROR);
+        alert(ERROR_MESSAGE);
     } else {
         addTask(taskName);
     }
@@ -38,30 +38,30 @@ function addTask(taskName, isCompleted = false) {
 
     const taskCheckbox = document.createElement("input");
     taskCheckbox.setAttribute("type", "checkbox");
-    isCompleted = taskCheckbox.checked;
+    taskCheckbox.checked = isCompleted;
     listItem.appendChild(taskCheckbox);
 
     const deleteButton = document.createElement("button");
-    deleteButton.textContent = DELETE_BUTTON;
+    deleteButton.textContent = DELETE_BUTTON_LABEL;
     listItem.appendChild(deleteButton);
 
     const editButtton = document.createElement("button");
 
-    editButtton.textContent = EDIT_BUTTON;
+    editButtton.textContent = EDIT_BUTTON_LABEL;
     listItem.appendChild(editButtton);
 
-    todoList.appendChild(listItem);
-    todoInput.value = "";
+    TODO_LIST.appendChild(listItem);
+    TODO_INPUT.value = "";
 
-    taskCheckbox.addEventListener("change", function () {
-        taskNameSpan.style.textDecoration = this.checked ? "line-through" : "none";
-        listItem.classList.toggle(TASK_COMPLETED_CLASS, this.checked);
-
+    taskCheckbox.addEventListener("change", event => {
+        const target = event.target;
+        taskNameSpan.style.textDecoration = target.checked ? "line-through" : "none";
+        listItem.classList.toggle(TASK_COMPLETED_CLASS, target.checked);
         saveToLocalStorage();
     })
 
     deleteButton.addEventListener("click", function () {
-        todoList.removeChild(listItem);
+        TODO_LIST.removeChild(listItem);
 
         saveToLocalStorage();
     })
@@ -72,19 +72,17 @@ function addTask(taskName, isCompleted = false) {
         const isEditing = listItem.classList.contains(TASK_EDITING_CLASS);
 
         if (isEditing) {
-            taskNameSpan.textContent = this.previousSibling.value;
-            listItem.insertBefore(taskNameSpan, taskEditingInput);
             taskNameSpan.textContent = taskEditingInput.value;
-            listItem.removeChild(taskEditingInput);
+            listItem.replaceChild(taskNameSpan, taskEditingInput);
+            taskNameSpan.textContent = taskEditingInput.value;
             listItem.classList.remove(TASK_EDITING_CLASS);
-            editButtton.textContent = EDIT_BUTTON;
+            editButtton.textContent = EDIT_BUTTON_LABEL;
         } else {
             taskEditingInput.type = "text";
             taskEditingInput.value = taskNameSpan.textContent;
-            listItem.insertBefore(taskEditingInput, taskNameSpan);
-            listItem.removeChild(taskNameSpan);
+            listItem.replaceChild(taskEditingInput, taskNameSpan);
             listItem.classList.add(TASK_EDITING_CLASS);
-            editButtton.textContent = SAVE_BUTTON;
+            editButtton.textContent = SAVE_BUTTON_LABEL;
         }
 
         saveToLocalStorage();
@@ -104,7 +102,7 @@ function saveToLocalStorage() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    const savedTasks = JSON.parse(localStorage[LOCAL_STORAGE_KEY] ?? []);
+    const savedTasks = JSON.parse(localStorage[LOCAL_STORAGE_KEY]) ?? [];
 
     savedTasks.forEach(task => {
         addTask(task.task, task.status);
