@@ -15,7 +15,9 @@
         <h1 id="todo_title">My To-Do List</h1>
         <form id="todo_form">
             <input id="todo_input" form="todo_form" name="taskName" type="text">
-            <button id="todo_button">Add</button>
+            <button id="add_button">Add</button>
+            <button type="button" onclick="deleteSelected()">Delete selected</button>
+            <button id="delete_all_button" onclick="deleteAll()">Delete all</button>
         </form>
         <ul id="todo_list"></ul>
     </div>
