@@ -15,24 +15,88 @@ const SELECT_BUTTON_LABEL = "Select";
 const ERROR_MESSAGE = "Please, enter the task name!"
 
 const EDITING_TASK_CLASS = "editing";
+const EDIT_BUTTON_CLASS = "edit_btn";
+const DELETE_BUTTON_CLASS = "delete_btn";
 const COMPLETED_TASK_CLASS = "completed";
 const SELECTED_TASK_CLASS = "selected";
 const LOCALSTORAGE_KEY = "tasks";
 const STATUS_PROPERTY_NAME = "isCompleted";
 
+class Task {
+    constructor(taskId, taskName, isCompleted = false) {
+        this.id = taskId;
+        this.name = taskName;
+        this.isCompleted = false;
 
+        this.listElem = document.createElement("li");
+
+        const isCompletedCheckbox = document.createElement("input");
+        isCompletedCheckbox.setAttribute("type", "checkbox");
+        this.listElem.appendChild(isCompletedCheckbox);
+
+        const listItemSpan = document.createElement("span");
+        listItemSpan.textContent = taskName;
+        this.listElem.appendChild(listItemSpan);
+
+        const listItemInput = document.createElement("input");
+        listItemInput.setAttribute("type", "text");
+        listItemInput.hidden = true;
+        this.listElem.appendChild(listItemInput);
+
+        const editButton = document.createElement("button");
+        editButton.textContent = EDIT_BUTTON_LABEL;
+        editButton.classList.add(EDIT_BUTTON_CLASS);
+        this.listElem.appendChild(editButton);
+
+        const deleteItemButton = document.createElement("button");
+        deleteItemButton.textContent = DELETE_BUTTON_LABEL;
+        deleteItemButton.classList.add(DELETE_BUTTON_CLASS);
+        this.listElem.appendChild(deleteItemButton);
+    }
+
+    updateName(name) {
+        this.name = name;
+        this.span.textContent = name;
+    }
+
+    toggleStatus() {
+        this.isCompleted = !this.isCompleted;
+        this.span.style.textDecoration = this.isCompleted ? "line-through" : "none";
+        this.checkbox.checked = this.isCompleted;
+    }
+
+    get span() {
+        return this.listElem.querySelector("span");
+    }
+
+    get checkbox() {
+        return this.listElem.querySelector("input[type='checkbox']");
+    }
+
+    get input() {
+        return this.listElem.querySelector("input[type='text']");
+    }
+
+    get deleteBtn() {
+        return this.listElem.querySelector(`button.${DELETE_BUTTON_CLASS}`);
+    }
+
+    get editBtn() {
+        return this.listElem.querySelector(`button.${EDIT_BUTTON_CLASS}`);
+    }
+}
 
 ADD_BUTTON.addEventListener("click", (event) => {
     event.preventDefault();
-    const taskName = TODO_INPUT.value;
 
     if (TODO_INPUT.value === "") {
         alert(ERROR_MESSAGE);
         return;
     }
 
+    const taskName = TODO_INPUT.value;
     const taskId = Date.now().toString();
-    const task = { id: taskId, name: taskName, isCompleted: false }
+    const task = new Task(taskId, taskName);
     tasks.push(task);
 
     addTask(task);
@@ -69,90 +133,53 @@ function deleteSelected() {
 }
 
 function addTask(task) {
-    const listItem = document.createElement("li");
-    listItem.setAttribute("id", task.id);
-    listItem.classList.toggle(COMPLETED_TASK_CLASS, task.isCompleted);
+    TODO_LIST.appendChild(task.listElem);
 
-    const isTaskDoneCheckbox = document.createElement("input");
-    isTaskDoneCheckbox.setAttribute("type", "checkbox");
-    isTaskDoneCheckbox.checked = task.isCompleted;
-    listItem.appendChild(isTaskDoneCheckbox);
-
-    const taskNameSpan = document.createElement("span");
-    taskNameSpan.textContent = task.name;
-    taskNameSpan.style.textDecoration = (task.isCompleted) ? "line-through" : "none";
-    listItem.appendChild(taskNameSpan);
-
-    const deleteItemButton = document.createElement("button");
-    deleteItemButton.textContent = DELETE_BUTTON_LABEL;
-    listItem.appendChild(deleteItemButton);
-
-    const editItemButton = document.createElement("button");
-    editItemButton.textContent = EDIT_BUTTON_LABEL;
-    listItem.appendChild(editItemButton);
-
-    TODO_LIST.appendChild(listItem);
-
-    isTaskDoneCheckbox.addEventListener("click", function () {
-        taskNameSpan.style.textDecoration = this.checked ? "line-through" : "none"; // тут звернути увагу на те, що індикатором чекнутого чекбоксу є сам чекбокс, а не розміщений стан у змінну isCompleted
-
-        listItem.classList.toggle(COMPLETED_TASK_CLASS, this.checked);
-
-        task.isCompleted = this.checked;
+    task.checkbox.addEventListener("click", function () {
+        task.toggleStatus();
 
         saveToLocalStorage();
     })
 
-    deleteItemButton.addEventListener("click", function () {
-        const index = tasks.indexOf(task);
-        delete tasks[index];
-
-        TODO_LIST.removeChild(listItem);
-
-        saveToLocalStorage();
-    });
-
-    const taskEditingInput = document.createElement("input");
-    taskEditingInput.setAttribute("type", "text");
-
-    editItemButton.addEventListener("click", function () {
-        const isEditing = listItem.classList.contains(EDITING_TASK_CLASS); // якщо оголосити цю змінну поза функцією, вона буде недосяжною
+    task.editBtn.addEventListener("click", function () {
+        const isEditing = task.listElem.classList.contains(EDITING_TASK_CLASS);
         
+        task.input.hidden = isEditing;
+        task.span.hidden = !isEditing;
+        task.listElem.classList.toggle(EDITING_TASK_CLASS, !isEditing);
+        task.editBtn.textContent = isEditing ? EDIT_BUTTON_LABEL : SAVE_BUTTON_LABEL;
+
         if (isEditing) {
-            taskNameSpan.textContent = taskEditingInput.value;
-            task.name = taskEditingInput.value;
-            listItem.replaceChild(taskNameSpan, taskEditingInput);
-            listItem.classList.remove(EDITING_TASK_CLASS);
-            editItemButton.textContent = EDIT_BUTTON_LABEL;
+            task.updateName(task.input.value);
         } else {
-            taskEditingInput.value = taskNameSpan.textContent;
-            listItem.replaceChild(taskEditingInput, taskNameSpan);
-            listItem.classList.add(EDITING_TASK_CLASS);
-            editItemButton.textContent = SAVE_BUTTON_LABEL;
+            task.input.value = task.name;
         }
 
         saveToLocalStorage();
     });
 
-    const selectItemButton = document.createElement("button");
-    selectItemButton.textContent = SELECT_BUTTON_LABEL;
-    listItem.appendChild(selectItemButton);
+    task.deleteBtn.addEventListener("click", () => {
+        task.listElem.remove();
+        tasks.splice(tasks.indexOf(task), 1);
 
-    selectItemButton.addEventListener("click", () => {
-        listItem.classList.toggle(SELECTED_TASK_CLASS);
-        const isSelected = listItem.classList.contains(SELECTED_TASK_CLASS);
-        taskNameSpan.style.color = isSelected ? "red" : "black";
         saveToLocalStorage();
-    })
+    });
 }
 
 function saveToLocalStorage() {
-    localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(tasks));
+    const tasksToSave = tasks.map(task => ({
+        id: task.id,
+        name: task.name,
+        isCompleted: task.isCompleted
+    }));
+
+    localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(tasksToSave));
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    tasks = JSON.parse(localStorage[LOCALSTORAGE_KEY]); // памʼятати про квадратні дужки замість крапки!!!
-    tasks.forEach(task => {
+    tasks = JSON.parse(localStorage[LOCALSTORAGE_KEY] ?? "[]");
+    tasks.forEach(t => {
+        const task = new Task(t.id, t.name, t.isCompleted);
         addTask(task);
     });
 });
